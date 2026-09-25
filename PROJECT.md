@@ -42,7 +42,7 @@ PROJECT.md                 本文件：边界三栏 + 命令 + 目录 + 指路
 学生档案.md                学生偏好七档 + 备注 + 学情（kilo.json 已登记自动加载）
 kilo.json                  权限 + instructions 登记
 harness.json               版本号 + 升级文件清单（upgradeable / merge_by_rule / never_touch）
-.kilo/agent/chief.md       总指挥人格（primary）
+kilo.json                  权限 + instructions 登记；**默认模式 code**（不带自定义人格——规则都在 AGENTS.md 与技能里）
 .kilo/command/*.md         斜杠命令（**只保留 /upgrade**；教学入口一律自然语言）
 .kilo/skills/<name>/SKILL.md   tutor / onboarding / wrongbook / recitation / notebook / study-data / upgrade
 学习数据/schema/*.sql      新库建表语句；migrations/<库>/NNN_*.sql 为已有库的结构变更（开库自动执行）

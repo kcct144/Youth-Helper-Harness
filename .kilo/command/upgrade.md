@@ -1,6 +1,5 @@
 ---
 description: 从上游同步 harness（技能/脚本/schema），学生数据与笔记不动
-agent: chief
 ---
 
 加载 `.kilo/skills/upgrade/SKILL.md`，按其中流程升级本工作区：

@@ -11,7 +11,8 @@ const HELP = `背诵本 recite.mjs
                         [--image "学习数据/图片/英语/x.png"]
                         长内容用 --json-file <UTF-8 JSON 文件> 或 --stdin 传 JSON，键名同上。
   due    今日抽背        node 学习数据/scripts/recite.mjs due [--limit 20] [--subject 英语]
-  list   卡片列表        node 学习数据/scripts/recite.mjs list [--subject 英语] [--topic "..."] [--all]
+  list   卡片列表        node 学习数据/scripts/recite.mjs list [--subject 英语] [--topic Unit3] [--all]
+                        --topic 是模糊匹配
   get    查看一张         node 学习数据/scripts/recite.mjs get <id>
   review 记录背诵结果    node 学习数据/scripts/recite.mjs review <id> --result pass|fail [--note "..."]
   reset  重新开始计时    node 学习数据/scripts/recite.mjs reset <id>
@@ -123,11 +124,15 @@ switch (cmd) {
       where.push('mastered = 0', 'due_date <= ?');
       params.push(today());
     } else if (!flags.all) where.push('mastered = 0');
-    for (const key of ['subject', 'topic', 'kind']) {
+    for (const key of ['subject', 'kind']) {
       if (flags[key]) {
         where.push(`${key} = ?`);
         params.push(flags[key]);
       }
+    }
+    if (flags.topic) {
+      where.push('topic LIKE ?');
+      params.push(`%${flags.topic}%`);
     }
     const limit = Number.isFinite(Number(flags.limit)) ? Number(flags.limit) : 20;
     const rows = db

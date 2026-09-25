@@ -12,7 +12,8 @@ const HELP = `错题本 wrong.mjs
                         [--source "2026春·周测3"] [--tags "导数,极值"] [--image "学习数据/图片/数学/x.png"]
                         长题干/长解析用 --json-file <UTF-8 JSON 文件> 或 --stdin，键名同上。
   due    今日到期错题    node 学习数据/scripts/wrong.mjs due [--limit 10] [--subject 数学]
-  list   全部错题        node 学习数据/scripts/wrong.mjs list [--subject 数学] [--all] [--limit 20]
+  list   全部错题        node 学习数据/scripts/wrong.mjs list [--subject 数学] [--topic 加速度] [--all] [--limit 20]
+                        --topic 是模糊匹配（知识点的一半就行），用于讲解前查"他在这个点上错过什么"
   get    查看一道         node 学习数据/scripts/wrong.mjs get <id>
   review 记录复习结果    node 学习数据/scripts/wrong.mjs review <id> --result pass|fail [--note "..."]
   reset  重新开始计时    node 学习数据/scripts/wrong.mjs reset <id>
@@ -146,6 +147,10 @@ switch (cmd) {
         where.push(`${key} = ?`);
         params.push(flags[key]);
       }
+    }
+    if (flags.topic) {
+      where.push('topic LIKE ?');
+      params.push(`%${flags.topic}%`);
     }
     const limit = Number.isFinite(Number(flags.limit)) ? Number(flags.limit) : 20;
     const rows = db

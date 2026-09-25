@@ -28,6 +28,7 @@
 | `/review` | 抽今日到期的错题 + 背诵卡 | `wrongbook` + `recitation` |
 | `/note` | 把一段知识整理成笔记落进学科文件夹 | `notebook` |
 | `/stats` | 查看错题/背诵本统计 | `study-data` |
+| `/upgrade` | 从上游同步 harness（学生数据、笔记不动） | `upgrade` |
 
 ## 三、目录约定
 
@@ -36,10 +37,12 @@ AGENTS.md                  AI 行为总则（自动加载）
 PROJECT.md                 本文件：边界三栏 + 命令 + 速查
 学生档案.md                学生偏好：讲解风格三档 + 归档积极程度三条 + 备注 + 学情（已由 kilo.json 登记自动加载）
 kilo.json                  权限（仅放行 学习数据/scripts 下的 node 调用）+ instructions 登记
+harness.json               版本号 + 升级文件清单（upgradeable / merge_by_rule / never_touch）
 .kilo/agent/chief.md       总指挥人格（primary）
 .kilo/command/*.md         斜杠命令
-.kilo/skills/<name>/SKILL.md   tutor / wrongbook / recitation / notebook / study-data
-学习数据/schema/*.sql      建表语句（唯一 schema 来源）
+.kilo/skills/<name>/SKILL.md   tutor / wrongbook / recitation / notebook / study-data / upgrade
+学习数据/schema/*.sql      新库建表语句（唯一 schema 来源）
+学习数据/schema/migrations/<库>/NNN_*.sql   已有库的结构变更（开库自动执行，库内 meta 记版本）
 学习数据/scripts/*.mjs     db.mjs（底层）、wrong.mjs、recite.mjs、grab-image.mjs（抓粘贴的图）
 学习数据/*.db              运行期生成，已被 .gitignore 排除
 学习数据/图片/<学科>/      错题、背诵卡用的图片（命名 用途-YYYYMMDD-序号.扩展名；.grabbed.json 防重复抓取；不进版本库）
@@ -114,4 +117,16 @@ node 学习数据/scripts/grab-image.mjs --subject 物理 --purpose 错题   # �
 - [x] 命令：explain、wrong、recite、review、note、stats
 - [x] 学生档案：讲解风格三档（互动频率 / 信息密度 / 引导强度）+ 归档积极程度三条（错题本 / 背诵本 / 笔记本）+ 备注 + 学情，经 `instructions` 自动加载
 - [x] 首次使用引导：`学习数据/` 下无 `.db` 时，AI 在首次会话主动用一屏介绍（见 `AGENTS.md`），不写学生向文档
+- [x] 升级机制：`harness.json` 版本与文件分级 + `schema/migrations/` 自动迁移 + `/upgrade` 命令与 `upgrade` 技能
 - [ ] 资料库内容：骨架已建，知识点随真实提问陆续沉淀
+
+## 七、升级（发布与同步）
+
+- 版本号在 `harness.json` 的 `version`。**改 harness 时同步 +1**；动了表结构还要加迁移（纪律见 `学习数据/schema/migrations/README.md`）。
+- 学生安装：`git clone <上游地址>`（想要自己的远程备份就 fork）。
+  **不要用 GitHub 的 "Use this template"** —— 它会把历史压成一个提交，之后合并上游要 `--allow-unrelated-histories` 且冲突面更大。
+- 学生升级：说一句"升级"，AI 按 `.kilo/skills/upgrade/SKILL.md` 执行
+  `fetch → 预览 → 备份 → 合并 → 迁移 → 自检 → 汇报`。
+- 文件分级以 `harness.json` 为准：`upgradeable` 取上游、`merge_by_rule` 人工合并（去重/保留学生值）、`never_touch` 绝不触碰。
+- 升级前副本放 `.upgrade-backup/<时间>/`（已 gitignore）；回滚 = `git reset --hard <升级前提交>` + 从备份拷回被合并的文件。
+- **学生的错题、背诵、图片、笔记正文永不参与升级**；升级脚本/schema 后由 `db.mjs` 自动迁移，不删库不重建。

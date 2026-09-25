@@ -2,13 +2,17 @@
 // 被 wrong.mjs 与 recite.mjs 引用；不直接被学生调用。
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const DATA_DIR = resolve(ROOT, '学习数据');
 export const SCHEMA_DIR = resolve(DATA_DIR, 'schema');
+export const MIGRATIONS_DIR = resolve(SCHEMA_DIR, 'migrations');
+
+// 各库当前 schema 版本；有结构变更时 +1，并在 schema/migrations/<库>/<新版本>_*.sql 写迁移
+export const SCHEMA_VERSION = { wrongbook: 2, recite: 2 };
 
 // 间隔重复阶梯：答对一次前进一档，第 5 档后视为已掌握
 export const INTERVALS = [1, 3, 7, 15, 30];
@@ -126,10 +130,75 @@ export function normalizeImages(value) {
 export function open(name) {
   if (!/^[a-z][a-z0-9_]*$/.test(name)) fail(`非法库名：${name}`);
   if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-  const db = new DatabaseSync(resolve(DATA_DIR, `${name}.db`));
+  const file = resolve(DATA_DIR, `${name}.db`);
+  const isNew = !existsSync(file);
+  const db = new DatabaseSync(file);
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(readFileSync(resolve(SCHEMA_DIR, `${name}.sql`), 'utf8'));
+  if (isNew) metaSet(db, 'schema_version', SCHEMA_VERSION[name] ?? 1);
+  else migrate(db, name);
   return db;
+}
+
+/* ---------------- schema 迁移 ---------------- */
+
+function metaEnsure(db) {
+  db.exec('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);');
+}
+
+function metaGet(db, key) {
+  metaEnsure(db);
+  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key);
+  return row ? row.value : null;
+}
+
+function metaSet(db, key, value) {
+  metaEnsure(db);
+  db.prepare(
+    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+  ).run(key, String(value));
+}
+
+/**
+ * 把已存在的库升到 SCHEMA_VERSION[name]。
+ * 没有 meta 表 / 没有 schema_version 的历史库按版本 1 处理。
+ * 返回 { from, to, applied[] }。
+ */
+export function migrate(db, name) {
+  const target = SCHEMA_VERSION[name] ?? 1;
+  const current = Number(metaGet(db, 'schema_version') ?? 1) || 1;
+  const result = { from: current, to: target, applied: [], skipped: [] };
+  if (current >= target) {
+    metaSet(db, 'schema_version', target);
+    result.from = target;
+    return result;
+  }
+  const dir = resolve(MIGRATIONS_DIR, name);
+  for (let v = current + 1; v <= target; v++) {
+    const prefix = String(v).padStart(3, '0');
+    const files = existsSync(dir)
+      ? readdirSync(dir).filter((f) => f.startsWith(prefix) && f.endsWith('.sql')).sort()
+      : [];
+    for (const f of files) {
+      try {
+        db.exec(readFileSync(resolve(dir, f), 'utf8'));
+        result.applied.push(f);
+      } catch (e) {
+        // 列已存在的库（例如手工建的 v2 库没有 meta）→ 视作已应用，继续
+        if (/duplicate column name/i.test(e.message)) result.skipped.push(f);
+        else fail(`迁移 ${name}/${f} 失败：${e.message}`);
+      }
+    }
+    metaSet(db, 'schema_version', v);
+  }
+  if (result.applied.length || result.skipped.length) {
+    console.error(
+      `↑ ${name} 已迁移 v${current} → v${target}` +
+        (result.applied.length ? `，执行 ${result.applied.join(', ')}` : '') +
+        (result.skipped.length ? `，跳过已应用的 ${result.skipped.join(', ')}` : '')
+    );
+  }
+  return result;
 }
 
 /* ---------------- 输出 ---------------- */

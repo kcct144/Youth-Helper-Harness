@@ -16,3 +16,6 @@ agent-manager.json
 # 图片附件：只保留说明文件，学生存的图不进模板仓库
 学习数据/图片/*
 !学习数据/图片/README.md
+
+# 升级前的本地备份（临时产物）
+.upgrade-backup/

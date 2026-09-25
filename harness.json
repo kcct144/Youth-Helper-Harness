@@ -1,0 +1,35 @@
+{
+  "name": "高中学习助手 harness",
+  "version": "1.0.0",
+  "released": "2026-09-25",
+  "upstream": "",
+  "upstream_note": "填上游仓库地址；留空时 AI 依次看 git remote 的 upstream、origin",
+  "policy_note": "升级时的文件处置清单。路径按前缀或通配匹配；学生个人数据与笔记永不参与升级。",
+  "upgradeable": [
+    ".kilo/**",
+    "AGENTS.md",
+    "PROJECT.md",
+    "kilo.json",
+    "harness.json",
+    ".gitignore",
+    "学习数据/scripts/**",
+    "学习数据/schema/*.sql",
+    "学习数据/schema/migrations/**",
+    "学习数据/图片/README.md",
+    "资料/index.md",
+    "资料/通用/index.md",
+    "资料/教材目录.md"
+  ],
+  "merge_by_rule": [
+    { "path": "资料/<学科>/index.md", "rule": "按条目标题去重合并：上游新条目与本地沉淀都保留" },
+    { "path": "笔记本/<学科>/index.md", "rule": "保留学生已登记的行，套用上游的新表格格式" },
+    { "path": "学生档案.md", "rule": "保留学生填写的档位值与备注，套用上游的新档位名与格式" }
+  ],
+  "never_touch": [
+    "学习数据/*.db",
+    "学习数据/图片/**（README.md 除外）",
+    "学习数据/图片/.grabbed.json",
+    "笔记本/<学科>/<专题>/**",
+    ".upgrade-backup/**"
+  ]
+}

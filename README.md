@@ -6,7 +6,7 @@
 ## 三步开始
 
 1. 安装 [VS Code](https://code.visualstudio.com/) 和 Kilo 插件（在 VS Code 扩展面板搜索 `Kilo`）
-2. 克隆本仓库：`git clone <仓库地址>`
+2. 克隆本仓库：`git clone https://github.com/kcct144/Youth-Helper-Harness.git`
 3. 用 VS Code 打开这个文件夹，按 `Ctrl + Alt + I` 打开聊天，说一句"你好"
 
 第一次打开时，它会用一屏把能做的事讲一遍。

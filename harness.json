@@ -2,7 +2,7 @@
   "name": "高中学习助手 harness",
   "version": "1.0.0",
   "released": "2026-09-25",
-  "upstream": "",
+  "upstream": "https://github.com/kcct144/Youth-Helper-Harness.git",
   "upstream_note": "填上游仓库地址；留空时 AI 依次看 git remote 的 upstream、origin",
   "policy_note": "升级时的文件处置清单。路径按前缀或通配匹配；学生个人数据与笔记永不参与升级。",
   "upgradeable": [

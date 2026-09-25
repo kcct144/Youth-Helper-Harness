@@ -1,6 +1,6 @@
 {
   "$schema": "https://app.kilo.ai/config.json",
-  "default_agent": "code",
+  "default_agent": "tutor",
   "instructions": ["学生档案.md"],
   "permission": {
     "bash": {

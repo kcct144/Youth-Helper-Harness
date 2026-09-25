@@ -12,7 +12,7 @@ export const SCHEMA_DIR = resolve(DATA_DIR, 'schema');
 export const MIGRATIONS_DIR = resolve(SCHEMA_DIR, 'migrations');
 
 // 各库当前 schema 版本；有结构变更时 +1，并在 schema/migrations/<库>/<新版本>_*.sql 写迁移
-export const SCHEMA_VERSION = { wrongbook: 2, recite: 2 };
+export const SCHEMA_VERSION = { wrongbook: 2, recite: 2, gap: 1 };
 
 // 间隔重复阶梯：答对一次前进一档，第 5 档后视为已掌握
 export const INTERVALS = [1, 3, 7, 15, 30];

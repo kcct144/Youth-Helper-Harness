@@ -11,7 +11,7 @@
 |---|---|---|
 | 讲解题目与知识点，结构固定、面向高中生 | 不超纲讲解、不编造教材页码/真题年份/来源 | 学生要"只给答案"还是"讲思路"时 |
 | 讲完顺手归档：默认提议，档案设为"直接记"时不问、不回禀，静默写入 | 学生未把该档案设为"直接记"时不自动写库；不批量写入；不自动新建学科文件夹 | 同一道题反复错、要不要合并成一张背诵卡 |
-| 错题本/背诵本一律经 `学习数据/scripts/*.mjs` 读写 | 不手改 `.db`、不绕过脚本改 schema、不删学生数据 | 删除记录（`remove`）必须先确认 |
+| 错题本/背诵本/缺口表一律经 `学习数据/scripts/*.mjs` 读写 | 不手改 `.db`、不绕过脚本改 schema、不删学生数据 | 删除记录（`remove`）必须先确认 |
 | 笔记按「学科/专题」落到 `笔记本/<学科>/<专题>/` | 不建与学科无关的顶层文件夹、不把资料写进笔记 | 一题涉及多科时归到哪一科 |
 | 资料库查不到就现讲，并把结论沉淀回 `资料/<学科>/index.md` | 不把 `资料/` 变成日记/过程记录 | 无 |
 | 数据全部留在本地 | 不上传学生数据、不接外部数据库 | 无 |
@@ -42,10 +42,10 @@ kilo.json                  权限（仅放行 学习数据/scripts 下的 node �
 harness.json               版本号 + 升级文件清单（upgradeable / merge_by_rule / never_touch）
 .kilo/agent/chief.md       总指挥人格（primary）
 .kilo/command/*.md         斜杠命令
-.kilo/skills/<name>/SKILL.md   tutor / wrongbook / recitation / notebook / study-data / upgrade
+.kilo/skills/<name>/SKILL.md   tutor / onboarding / wrongbook / recitation / notebook / study-data / upgrade
 学习数据/schema/*.sql      新库建表语句（唯一 schema 来源）
 学习数据/schema/migrations/<库>/NNN_*.sql   已有库的结构变更（开库自动执行，库内 meta 记版本）
-学习数据/scripts/*.mjs     db.mjs（底层）、wrong.mjs、recite.mjs、grab-image.mjs（抓粘贴的图）
+学习数据/scripts/*.mjs     db.mjs（底层）、wrong.mjs、recite.mjs、gap.mjs（缺口）、grab-image.mjs（抓粘贴的图）
 学习数据/*.db              运行期生成，已被 .gitignore 排除
 学习数据/图片/<学科>/      错题、背诵卡用的图片（命名 用途-YYYYMMDD-序号.扩展名；.grabbed.json 防重复抓取；不进版本库）
 笔记本/<学科>/index.md      学科目录页（按专题汇总的表格）
@@ -91,6 +91,13 @@ node 学习数据/scripts/recite.mjs add --subject 化学 --topic "氧化还原�
 3. 被还原" --hook "升失氧、降得还" --source "错题 #12"
 node 学习数据/scripts/recite.mjs due | list | get | review | reset | remove | stats
 
+# 缺口（查缺补漏主线：缺 → 补 → 强 → 已掌握；状态只由证据推进）
+node 学习数据/scripts/gap.mjs add --subject 物理 --topic "运动的描述·加速度" \
+     --title "加速度公式不熟" --cause 概念不清 --evidence 3
+node 学习数据/scripts/gap.mjs fill <id> --action "讲解 + 做成卡 #7"
+node 学习数据/scripts/gap.mjs verify <id> --result pass|fail
+node 学习数据/scripts/gap.mjs board | due | list | get <id> | stats
+
 # 图片：把对话框里粘贴的图抓出来（只读 Kilo 会话库；幂等；失败则请学生另存）
 node 学习数据/scripts/grab-image.mjs --list                      # 看候选
 node 学习数据/scripts/grab-image.mjs --subject 物理 --purpose 错题   # 落 学习数据/图片/物理/错题-YYYYMMDD-01.png
@@ -114,12 +121,18 @@ node 学习数据/scripts/grab-image.mjs --subject 物理 --purpose 错题   # �
 ## 六、当前状态
 
 - [x] harness 骨架：AGENTS.md、PROJECT.md、kilo.json、目录骨架（笔记本 3 科 / 资料 9 科）
-- [x] 错题本 / 背诵本 schema 与脚本（已实跑自证）
+- [x] 错题本 / 背诵本 / 缺口表 schema 与脚本（已实跑自证）
 - [x] 技能：tutor、wrongbook、recitation、notebook、study-data
 - [x] 命令：explain、wrong、recite、review、note、stats
 - [x] 学生档案：讲解风格四档（互动频率 / 信息密度 / 引导强度 / 互动形式）+ 归档积极程度三条（错题本 / 背诵本 / 笔记本）+ 备注 + 学情，经 `instructions` 自动加载
-- [x] 互动规范：优先点选、选项不泄露答案（AGENTS.md「互动要求」+ tutor 技能第 1 节）
-- [x] 首次使用引导：`学习数据/` 下无 `.db` 时，AI 在首次会话主动用一屏介绍（见 `AGENTS.md`），不写学生向文档
+- [x] 互动规范：优先点选、选项不泄露答案、**description 默认留空**（AGENTS.md「互动要求」+ tutor 技能第 1 节）
+- [x] 教学节奏：**"一步一步"改节奏不改信息量**（路线图 + 进度标注 + 连续答对就合并、代数不跳步、机械动作不提问、同题不重讲）——tutor 技能 §3
+- [x] 讲解质量：**禁止跳步**（每个等式可复现）、"哪来的"给三件套、符号超载就降维、只问为什么/往哪走、"你再想想"最多一次、出新题必验证 —— tutor 技能 §3
+- [x] 缺口表（**AI 内部机制，不向学生暴露**）：`gaps.db` + `gap.mjs`（缺/补/强/已掌握 + 事件流 + 反复计数）；状态只由证据推进，计算失误/粗心不建缺口
+- [x] 出题纪律：**出题前先问**（选项"来一道 / 先不用"），学生不想练就翻篇；只有他主动要求或说"我会了"要验证时才提议 —— tutor 技能 §3 + AGENTS.md
+- [x] 模式判定：**题的问题 → 讲题（逐步）；知识点的问题 → 讲课（离开题、连续讲完一个模块，不用问答推推导）** —— tutor 技能 §2
+- [x] 公式写法：**聊天里没有行内公式**（`$...$` 不渲染；`\(...\)` 会独占一行居中撑高）→ 句子内纯文本、复杂公式单独成段 `$$...$$`；`.md` 文件不受限
+- [x] 首次使用引导：`学习数据/` 下无 `.db` 时，AI 用一屏介绍 + **只问 1 个问题**（其余讲完第一道题再问），流程见 `onboarding` 技能
 - [x] 升级机制：`harness.json` 版本与文件分级 + `schema/migrations/` 自动迁移 + `/upgrade` 命令与 `upgrade` 技能
 - [ ] 资料库内容：骨架已建，知识点随真实提问陆续沉淀
 

@@ -25,24 +25,26 @@ const EXT = {
   'image/svg+xml': 'svg',
 };
 
-const HELP = `grab-image.mjs —— 把对话框里粘贴的图片存进 学习数据/图片/
+const HELP = `grab-image.mjs —— 把对话框里粘贴或拖进来的图片存进 学习数据/图片/
   --subject <学科>   必填，决定子目录（数学/物理/化学/…）
   --purpose <用途>   文件名前缀，默认 错题（可用 背诵 / 题目）
-  --minutes <N>      只取最近 N 分钟内粘贴的图，默认 60；0 表示不限
+  --minutes <N>      只取最近 N 分钟内的图，默认 60；0 表示不限
   --limit <N>        最多取几张，默认 1（按时间从新到旧）
-  --list             只列出候选，不写文件
+  --list             只列出候选，不写文件（会标明「粘贴」还是「文件」）
+  --probe            诊断：打印最近带 mime/url/path 的 part 形状，排查"抓不到"
   --dry-run          打印将写入的路径，不写文件
   --json             输出 JSON（供 AI 解析）
   --session <id>     指定会话（默认取本工作区最新会话）
   --db <path>        指定会话库路径（默认 ~/.local/share/kilo/kilo.db）
 也接受 --stdin / --json-file 传同样的键。
+支持两种附件：粘贴/截图进来的是 base64（data URL），拖拽文件进来的是磁盘路径。
 
 输出：写入的相对路径（相对仓库根），例如
   学习数据/图片/物理/错题-20260925-01.png`;
 
 const args = parseArgs(process.argv.slice(2));
 const flags = args.flags;
-if (flags.help || (!flags.subject && !flags.list && !flags['dry-run'])) {
+if (flags.help || (!flags.subject && !flags.list && !flags.probe && !flags['dry-run'])) {
   console.log(HELP);
   process.exit(flags.help ? 0 : 0);
 }
@@ -89,16 +91,43 @@ const parts = db
       return null;
     }
     const mime = d?.mime || d?.file?.mime;
+    if (!mime || !EXT[mime]) return null;
     const url = d?.url || d?.file?.url || d?.source?.url;
-    if (!mime || !EXT[mime] || typeof url !== 'string' || !url.startsWith('data:')) return null;
-    return { partId: r.id, time: r.time_created, mime, url };
+    const path = d?.path || d?.file?.path || d?.source?.path;
+    // 粘贴/截图进来的是 base64 data URL；拖拽文件进来的可能是磁盘路径，两种都认
+    if (typeof url === 'string' && url.startsWith('data:')) {
+      return { partId: r.id, time: r.time_created, mime, kind: 'data', ref: url };
+    }
+    if (typeof path === 'string' && path) {
+      return { partId: r.id, time: r.time_created, mime, kind: 'file', ref: path };
+    }
+    if (typeof url === 'string' && url.startsWith('file://')) {
+      return { partId: r.id, time: r.time_created, mime, kind: 'file', ref: fileURLToPath(url) };
+    }
+    return null;
   })
   .filter(Boolean);
 
+// --probe：诊断用，打印最近与附件有关的 part 形状（不落盘）
+if (flags.probe) {
+  const rows = db
+    .prepare('SELECT id, time_created, substr(data, 1, 300) head FROM part WHERE session_id = ? ORDER BY time_created DESC LIMIT 400')
+    .all(sessionId)
+    .filter((r) => /"(mime|url|path|filename|source)"\s*:/.test(r.head));
+  console.log(`会话 ${sessionId}，疑似附件的 part ${rows.length} 条：`);
+  for (const r of rows.slice(0, 10)) {
+    console.log(`\n--- ${r.id}  ${new Date(r.time_created).toISOString()}`);
+    console.log('    ' + r.head.replace(/\s+/g, ' '));
+  }
+  if (!rows.length) console.log('（没有带 mime/url/path 字段的 part —— 说明这次拖拽/粘贴没被记成附件）');
+  db.close();
+  process.exit(0);
+}
+
 if (flags.list) {
-  if (flags.json) console.log(JSON.stringify({ ok: true, meta: { session: sessionId }, data: parts.map((p) => ({ partId: p.partId, mime: p.mime, time: new Date(p.time).toISOString() })) }, null, 2));
-  else if (!parts.length) console.log('（该时间窗内没有粘贴的图片）');
-  else parts.forEach((p) => console.log(`${new Date(p.time).toISOString()}  ${p.mime}  ${p.partId}`));
+  if (flags.json) console.log(JSON.stringify({ ok: true, meta: { session: sessionId }, data: parts.map((p) => ({ partId: p.partId, mime: p.mime, kind: p.kind, time: new Date(p.time).toISOString() })) }, null, 2));
+  else if (!parts.length) console.log(`（最近 ${mins} 分钟内没有粘贴或拖进来的图片）`);
+  else parts.forEach((p) => console.log(`${new Date(p.time).toISOString()}  ${p.mime}  ${p.kind === 'data' ? '粘贴' : '文件'}  ${p.partId}`));
   db.close();
   process.exit(0);
 }
@@ -130,7 +159,6 @@ for (const t of targets) {
     written.push({ partId: t.partId, path: index[t.partId], existed: true });
     continue;
   }
-  const b64 = String(t.url).slice(String(t.url).indexOf(',') + 1);
   const ext = EXT[t.mime];
   const date = today();
   let n = 1;
@@ -142,10 +170,21 @@ for (const t of targets) {
   } while (taken.has(name));
   const rel = `学习数据/图片/${subject}/${name}`;
   if (!flags['dry-run']) {
-    writeFileSync(resolve(ROOT, rel), Buffer.from(b64, 'base64'));
+    let bytes;
+    if (t.kind === 'data') {
+      const s = String(t.ref);
+      bytes = Buffer.from(s.slice(s.indexOf(',') + 1), 'base64');
+    } else {
+      if (!existsSync(t.ref)) {
+        console.error(`! 附件路径不存在，跳过：${t.ref}`);
+        continue;
+      }
+      bytes = readFileSync(t.ref);
+    }
+    writeFileSync(resolve(ROOT, rel), bytes);
     index[t.partId] = rel;
   }
-  written.push({ partId: t.partId, path: rel, mime: t.mime, time: new Date(t.time).toISOString() });
+  written.push({ partId: t.partId, path: rel, mime: t.mime, kind: t.kind, time: new Date(t.time).toISOString() });
 }
 
 if (!flags['dry-run']) writeFileSync(INDEX_FILE, JSON.stringify(index, null, 2));

@@ -65,13 +65,17 @@ description: 学习数据底层手册：错题本/背诵本的脚本命令、sch
 ## 图片与附件
 
 - 图片统一放 `学习数据/图片/<学科>/`，命名 `用途-YYYYMMDD-序号.扩展名`；该目录已被 `.gitignore` 排除（只放行 `README.md`）。
-- **`grab-image.mjs`：把对话框里粘贴的图片抓出来落盘**（只读 Kilo 会话库，取最近粘贴的图）：
+- **`grab-image.mjs`：把对话框里粘贴或拖进来的图片抓出来落盘**（只读 Kilo 会话库）：
 
   ```bash
-  node 学习数据/scripts/grab-image.mjs --list                  # 看候选
+  node 学习数据/scripts/grab-image.mjs --list                       # 看候选（标注 粘贴/文件）
   node 学习数据/scripts/grab-image.mjs --subject 物理 --purpose 错题
+  node 学习数据/scripts/grab-image.mjs --probe                      # 抓不到时：打印附件真实形状
   # 选项：--minutes 60（0=不限）--limit 1 --dry-run --json --session <id> --db <path>
   ```
+
+  两种附件形态都支持：**粘贴/截图**（base64 data URL）与**拖拽文件**（磁盘路径）。
+  抓取失败且 `--list` 也没候选时，跑 `--probe` 看 part 形状再决定怎么改脚本 —— 不要靠猜。
 
   幂等：同一张图重复抓取返回原路径，不重复落盘（`学习数据/图片/.grabbed.json` 记录 partId→路径）。
   失败时退出码 1 并提示原因 → 回退到"请学生另存"。
@@ -87,6 +91,44 @@ description: 学习数据底层手册：错题本/背诵本的脚本命令、sch
   `answer`(自测答案，`answer` 必填)、`my_answer`、`analysis`、`cause`、`difficulty`、`source`、`tags`、`image`。
 - `recite_cards`：`front`(正面/问题)、`back`(反面/答案)、`hook`(记忆钩子)、`hint`、`kind`、`source`、`image`。
 - 两者的 `fp` 去重规则、`due_date/stage/streak/lapses/mastered` 调度字段含义不变（见下两节）。
+
+## 缺口表（查缺补漏强化）
+
+`学习数据/gaps.db`：一个**知识点/能力**的掌握状态，是这个仓库的主线（缺 → 补 → 强 → 已掌握）。
+错题是"证据"，背诵卡是"记忆点"，**缺口是它们的上位目录**。
+
+```bash
+node 学习数据/scripts/gap.mjs add --subject 物理 --topic "运动的描述·加速度" \
+     --title "加速度公式不熟" --cause 概念不清 --evidence 3
+node 学习数据/scripts/gap.mjs fill <id> --action "讲解 + 做成卡 #7" --kind 讲解
+node 学习数据/scripts/gap.mjs verify <id> --result pass|fail
+node 学习数据/scripts/gap.mjs due | list [--subject] [--status] | board | get <id> | stats
+```
+
+状态机（**只由证据推进**，不由 AI 感觉推进）：
+
+| 转移 | 触发 |
+|---|---|
+| → 缺 | 错题暴露 / 学生自述 / 同一概念第 2 次卡 |
+| 缺 → 补 | `fill`（讲解 / 做卡 / 笔记） |
+| 补 → 强 | `verify pass` 第一次通过 |
+| 强 → 已掌握 | 强阶段再连过 2 次（`stage` 到 3） |
+| 已掌握 / 强 → 补 | **来了新错题**（自动回退，`regressions + 1`） |
+| 补阶段 `verify fail` | 保持「补」，`due` 推到明天（不算回退） |
+
+纪律：
+
+- **只有「概念不清 / 方法不会 / 审题偏差」建缺口**；「计算失误 / 粗心 / 时间不够」不建——那是习惯问题。
+- `topic` 与错题本、笔记专题、背诵卡 topic **用同一套命名**（章节简称·考点），三张表才天然对齐。
+- `regressions > 0`（反复错的缺口）是最该优先处理的信号，`board` 与 `stats` 都会把它排在前面。
+
+**这是 AI 的内部机制，不面向学生**：
+
+- 不主动展示看板；对话里不要出现"缺口表""状态""回退""反复次数"这些词。
+- 给学生结论时翻译成人话："这个点你已经错两次了，今天先过它"、"上次会了这次又错，说明没稳"。
+- **没有 `/gap` 命令**（已删）——需要看板时自己跑 `gap.mjs`，只把结论讲出来。
+- 学生主动问"我哪里弱"时可以用自然语言列清单，但同样不展示内部字段。
+- 这个表是给你排优先级用的：先安排 `regressions > 0` 与 `due` 到期的，再安排其他的。
 
 ## 汇报纪律
 

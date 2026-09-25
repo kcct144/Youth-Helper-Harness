@@ -1,0 +1,18 @@
+# 依赖与锁文件（本工作区零依赖，无需 npm install）
+node_modules
+package.json
+package-lock.json
+pnpm-lock.yaml
+bun.lock
+yarn.lock
+agent-manager.json
+
+# 学生个人数据：运行期由脚本生成，不进模板仓库
+学习数据/*.db
+学习数据/*.db-journal
+学习数据/*.db-wal
+学习数据/*.db-shm
+
+# 图片附件：只保留说明文件，学生存的图不进模板仓库
+学习数据/图片/*
+!学习数据/图片/README.md

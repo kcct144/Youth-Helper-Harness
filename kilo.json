@@ -1,0 +1,13 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "default_agent": "chief",
+  "instructions": ["学生档案.md"],
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "node 学习数据/scripts/*": "allow",
+      "node 学习数据\\scripts\\*": "allow",
+      "node 学习数据/scripts/*.mjs*": "allow"
+    }
+  }
+}

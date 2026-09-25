@@ -1,0 +1,42 @@
+:root {
+  --bg: #f7f7f5;
+  --card: #fff;
+  --ink: #1f2328;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --ok: #15803d;
+  --ok-bg: #ecfdf3;
+  --no: #b42318;
+  --no-bg: #fef3f2;
+  --accent: #3355ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 32px 16px 64px;
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.65 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+main { max-width: 720px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.muted { color: var(--muted); font-size: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-top: 16px; }
+.tag { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; margin-right: 6px; }
+.prompt { font-size: 19px; white-space: pre-wrap; margin: 14px 0; }
+.stem { color: var(--muted); font-size: 14px; white-space: pre-wrap; border-left: 3px solid var(--line); padding-left: 10px; margin: 10px 0; }
+.opt { display: block; width: 100%; text-align: left; margin: 8px 0; padding: 12px 14px; font-size: 16px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.opt:hover { border-color: var(--accent); }
+.opt.right { border-color: var(--ok); background: var(--ok-bg); }
+.opt.wrong { border-color: var(--no); background: var(--no-bg); }
+.answer { margin-top: 14px; padding: 14px; background: #fbfbfa; border: 1px dashed var(--line); border-radius: 10px; white-space: pre-wrap; }
+.hook { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+button { font: inherit; padding: 11px 18px; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.ok { border-color: var(--ok); color: var(--ok); }
+button.no { border-color: var(--no); color: var(--no); }
+.progress { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; margin: 18px 0 6px; }
+.progress > i { display: block; height: 100%; background: var(--accent); }
+ul.missed { padding-left: 20px; }
+ul.missed li { margin: 4px 0; }
+kbd { background: #eef0f3; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 13px; }

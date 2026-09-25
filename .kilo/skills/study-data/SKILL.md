@@ -13,7 +13,8 @@ description: 学习数据底层手册：错题本/背诵本的脚本命令、sch
 - `学习数据/scripts/recite.mjs` —— 背诵本。
 - `学习数据/schema/*.sql` —— 建表语句，**schema 的唯一来源**，每次开库自动执行（`CREATE TABLE IF NOT EXISTS`）。
 
-完整命令速查见 `PROJECT.md` 第四节；业务规则见 `wrongbook` / `recitation` 技能。
+命令与业务规则：见 `wrongbook` / `recitation` / `notebook` 技能（各自带完整写法）。
+**运维类内容**（改 schema、字段表、备份与排错）在同目录 `schema-ops.md`，**用到才读**。
 
 ## 环境
 
@@ -44,23 +45,8 @@ description: 学习数据底层手册：错题本/背诵本的脚本命令、sch
 - `pass`：档 +1，到期 = 今天 + 新档间隔；档位走到 30 天后 `mastered = 1`，退出队列。
 - `fail`：档归 0、`streak` 清零、`lapses` +1，明天再来。
 - 每次复习都会在 `wrong_reviews` / `recite_reviews` 留痕，`get <id>` 可看到历史。
-
-## schema 变更
-
-1. 改 `学习数据/schema/<name>.sql`；
-2. 已存在的列不会自动加上（`IF NOT EXISTS` 只管建表），需另写一次性迁移：
-   `node -e "..."` 或在 `schema/` 下加 `migrations/<日期>.sql` 并手动执行一次；
-3. 改完必须用一条 `add` + `list --json` 实跑验证，再让学生继续用。
-
-**不要**为了加字段直接删库重建——那会丢学生全部复习进度。
-
-## 备份与排错
-
-- 备份：整个 `学习数据/*.db` 复制一份即可（可先 `db.close()`，即等脚本跑完）。
-- 想给学生看内容：用 `list --all` / `get <id>` / `stats`，不要打开 `.db`。
-- 报错 `ERR_UNKNOWN_BUILTIN_MODULE: node:sqlite` → Node 版本太旧，升级到 22.5+。
-- 中文乱码 → 确认终端为 UTF-8；脚本本身按 UTF-8 读写，问题通常在终端而不是数据。
-- 指纹对不上（重复行）→ 用 `list --all` 找出旧行 `remove <id> --yes`（须学生同意），或直接用 `get` 对比。
+- 复习的**执行**由 `复习/server.mjs` 负责（复用这里的 `applyReview` / `applyGapVerify`），**AI 不逐条抽问**；
+  学生说"讲讲刚才没过的"时读 `学习数据/待讲解.json`。
 
 ## 图片与附件
 
@@ -85,16 +71,9 @@ description: 学习数据底层手册：错题本/背诵本的脚本命令、sch
 - 实现说明：Kilo 把粘贴的图以 base64 存在会话库 `part.data`（`{"type":"file","mime":"image/png","url":"data:…"}`）。
   这是 Kilo 内部结构，**升级后可能失效**——脚本已做到失败即回退，不要把它当唯一路径。
 
-## schema 字段速查（v2）
-
-- `wrong_questions`：`form`(单选/填空/解答)、`stem`(保真原题)、`options`(单选)、`drill`(挖空题面)、
-  `answer`(自测答案，`answer` 必填)、`my_answer`、`analysis`、`cause`、`difficulty`、`source`、`tags`、`image`。
-- `recite_cards`：`front`(正面/问题)、`back`(反面/答案)、`hook`(记忆钩子)、`hint`、`kind`、`source`、`image`。
-- 两者的 `fp` 去重规则、`due_date/stage/streak/lapses/mastered` 调度字段含义不变（见下两节）。
-
 ## 缺口表（查缺补漏强化）
 
-`学习数据/gaps.db`：一个**知识点/能力**的掌握状态，是这个仓库的主线（缺 → 补 → 强 → 已掌握）。
+`学习数据/gap.db`：一个**知识点/能力**的掌握状态，是这个仓库的主线（缺 → 补 → 强 → 已掌握）。
 错题是"证据"，背诵卡是"记忆点"，**缺口是它们的上位目录**。
 
 ```bash
@@ -137,4 +116,4 @@ node 学习数据/scripts/gap.mjs due | list [--subject] [--status] | board | ge
 
 **唯一例外——"直接记"档**：当该档案的积极程度为"直接记"、且是 AI 自发归档（学生没要求）时，
 **静默写入，不在回复里提**；学生问起再报 `#id` 与下次复习日期。
-学生用 `/wrong`、`/recite` 等明确要求时，照常贴输出。
+学生明确要求时，照常贴输出。

@@ -7,6 +7,7 @@
   "policy_note": "升级时的文件处置清单。路径按前缀或通配匹配；学生个人数据与笔记永不参与升级。",
   "upgradeable": [
     ".kilo/**",
+    "复习/**",
     "README.md",
     "AGENTS.md",
     "PROJECT.md",

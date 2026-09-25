@@ -201,6 +201,51 @@ export function migrate(db, name) {
   return result;
 }
 
+/* ---------------- 缺口状态机（CLI 与网页共用这一份实现） ---------------- */
+
+/** 按 subject + topic 找缺口：错题/卡片的 topic 与缺口用同一套命名（章节简称·考点） */
+export function findGap(db, subject, topic) {
+  return db.prepare('SELECT * FROM gaps WHERE fp = ?').get(fingerprint(subject, topic));
+}
+
+/**
+ * 推进缺口：pass → 补/缺变强、强阶段再连过 2 次变已掌握；fail → 退回补（强/已掌握时计一次反复）。
+ * 返回更新后的记录。状态只由证据推进，调用方不得凭"感觉"调用。
+ */
+export function applyGapVerify(db, id, result, note) {
+  const cur = db.prepare('SELECT * FROM gaps WHERE id = ?').get(id);
+  if (!cur) fail(`找不到 id=${id} 的缺口`);
+  const date = today();
+  const from = cur.status;
+  let { status, stage, regressions, strong_at: strongAt, mastered_at: masteredAt } = cur;
+  let due = cur.due_date;
+
+  if (result === 'pass') {
+    stage += 1;
+    if (status === '缺' || status === '补') {
+      status = '强';
+      strongAt = date;
+    } else if (status === '强' && stage >= 3) {
+      status = '已掌握';
+      masteredAt = date;
+    }
+    due = status === '已掌握' ? null : addDays(date, INTERVALS[Math.min(stage, INTERVALS.length - 1)]);
+  } else {
+    if (from === '强' || from === '已掌握') regressions += 1;
+    status = '补';
+    stage = 0;
+    due = addDays(date, INTERVALS[0]);
+  }
+
+  db.prepare(
+    `UPDATE gaps SET status=?, stage=?, regressions=?, due_date=?, strong_at=?, mastered_at=?, updated_at=? WHERE id=?`
+  ).run(status, stage, regressions, due, strongAt, masteredAt, date, id);
+  db.prepare('INSERT INTO gap_events (gap_id, at, kind, from_status, to_status, detail) VALUES (?,?,?,?,?,?)').run(
+    id, date, result === 'pass' ? '通过' : '未通过', from, status, note ?? null
+  );
+  return { ...cur, status, stage, regressions, due_date: due };
+}
+
 /* ---------------- 输出 ---------------- */
 
 const WIDE = /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6]/;

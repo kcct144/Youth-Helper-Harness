@@ -88,7 +88,7 @@ node 学习数据/scripts/recite.mjs add --subject 化学 --topic "氧化还原�
 ## 6. 积极程度与自动记录
 
 `学生档案.md` 的**背诵本积极程度**决定讲解结尾（AI 自发归档）的力度：`不主动 / 标准 / 主动 / 直接记`，
-四档含义见 tutor 技能的同名表。**学生用 `/recite` 明确要求时一律直接写入，不看档位。**
+四档含义见 tutor 技能的同名表。**学生明确要求时一律直接写入，不看档位。**
 
 `直接记` 门槛更严：
 
@@ -106,11 +106,10 @@ node 学习数据/scripts/recite.mjs add --subject 化学 --topic "氧化还原�
   学生抽背 `pass` 时顺手 `node 学习数据/scripts/gap.mjs verify <缺口id> --result pass`。
   缺口状态只由证据推进，不靠感觉判定。
 
-## 7. 抽背（`/review` 的背诵部分）
+## 7. 抽背（走网页）
 
-```bash
-node 学习数据/scripts/recite.mjs due --limit 10
-```
+抽背也走网页：双击 `复习/开始复习.cmd` → 正面 → 想不起来就翻面 → 点"记住了 / 没记住"。
+**AI 不逐张抽问**。学生说"讲讲刚才没过的"时，读 `学习数据/待讲解.json` 定位，再用 `get <id>` 取卡面讲解。
 
 一次一张，节奏是：
 

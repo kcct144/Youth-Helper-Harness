@@ -23,6 +23,10 @@ git status --short
   以后改用 `git clone` 安装；或本次由你手动把上游的 `.kilo/**`、`AGENTS.md`、`PROJECT.md`、`kilo.json`、
   `学习数据/scripts/**`、`学习数据/schema/**` 覆盖过来（**逐条对照 `harness.json`**，绝不碰数据）。
 - **上游地址**：`harness.json.upstream` 填了就核对；留空则依次取 `git remote` 里的 `upstream`、`origin`。
+- **学生怎么装**：`git clone <上游地址>`（想要自己的远程备份就 fork）。**不要用 GitHub 的 "Use this template"**——
+  它会把历史压成一个提交，之后合并上游要 `--allow-unrelated-histories`，冲突面更大。
+- **回滚**：`git reset --hard <升级前的提交>` ＋ 从 `.upgrade-backup/<时间>/` 拷回被合并的文件。
+  数据从不参与升级，所以回滚不会丢数据。
 - **工作区有未提交改动**（学生刚写过的笔记）：先提交一次，避免 merge 被拒——
   `git add -A && git commit -m "升级前：保存本地改动"`。**只提交，不 push。**
 

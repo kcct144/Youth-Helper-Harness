@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 缺口（查缺补漏强化）存取脚本。用法见 `node 学习数据/scripts/gap.mjs`（不带参数即打印帮助）。
 import {
-  addDays, fail, fingerprint, INTERVALS, loadInput, open, out, parseArgs, pick, table, today,
+  addDays, applyGapVerify, fail, fingerprint, INTERVALS, loadInput, open, out, parseArgs, pick, table, today,
 } from './db.mjs';
 
 const HELP = `缺口 gap.mjs —— 「缺 → 补 → 强 → 已掌握」的状态记录
@@ -174,47 +174,16 @@ switch (cmd) {
     if (!['pass', 'fail'].includes(result)) fail('--result 需为 pass 或 fail');
     const note = pick(flags, {}, 'note');
     const db = open('gap');
-    const cur = db.prepare('SELECT * FROM gaps WHERE id = ?').get(id);
+    const cur = db.prepare('SELECT status FROM gaps WHERE id = ?').get(id);
     if (!cur) fail(`找不到 id=${id} 的缺口`);
-    const date = today();
-    const from = cur.status;
-    let status = cur.status;
-    let stage = cur.stage;
-    let regressions = cur.regressions;
-    let due = cur.due_date;
-    let masteredAt = cur.mastered_at;
-    let strongAt = cur.strong_at;
+    const after = applyGapVerify(db, id, result, note);
 
-    if (result === 'pass') {
-      stage += 1;
-      const interval = INTERVALS[Math.min(stage, INTERVALS.length - 1)];
-      if (status === '缺' || status === '补') {
-        status = '强';
-        strongAt = date;
-      } else if (status === '强' && stage >= 3) {
-        status = '已掌握';
-        masteredAt = date;
-      }
-      due = addDays(date, interval);
-      if (status === '已掌握') due = null;
-    } else {
-      if (from === '强' || from === '已掌握') regressions += 1;
-      status = '补';
-      stage = 0;
-      due = addDays(date, INTERVALS[0]);
-    }
-
-    db.prepare(
-      `UPDATE gaps SET status=?, stage=?, regressions=?, due_date=?, strong_at=?, mastered_at=?, updated_at=? WHERE id=?`
-    ).run(status, stage, regressions, due, strongAt, masteredAt, date, id);
-    logEvent(db, id, result === 'pass' ? '通过' : '未通过', from, status, note);
-
-    if (flags.json) console.log(JSON.stringify({ ok: true, meta: null, data: { ...cur, status, stage, regressions, due_date: due } }, null, 2));
+    if (flags.json) console.log(JSON.stringify({ ok: true, meta: null, data: after }, null, 2));
     else
       console.log(
-        `#${id} ${result === 'pass' ? '✓ 通过' : '✗ 未通过'}：${from} → ${status}` +
-          (result === 'pass' && status !== '已掌握' ? `，下次验证 ${due}` : '') +
-          (result === 'fail' ? `，明天再验证（累计反复 ${regressions} 次）` : '')
+        `#${id} ${result === 'pass' ? '✓ 通过' : '✗ 未通过'}：${cur.status} → ${after.status}` +
+          (result === 'pass' && after.status !== '已掌握' ? `，下次验证 ${after.due_date}` : '') +
+          (result === 'fail' ? `，明天再验证（累计反复 ${after.regressions} 次）` : '')
       );
     db.close();
     break;

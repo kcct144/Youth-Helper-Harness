@@ -20,3 +20,7 @@ agent-manager.json
 
 # 升级前的本地备份（临时产物）
 .upgrade-backup/
+
+# Python 缓存（题库维护工具用）
+__pycache__/
+*.pyc

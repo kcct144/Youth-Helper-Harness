@@ -53,7 +53,7 @@ git diff --name-status HEAD <remote>/main
 ## 3. 备份（关键，先做）
 
 把**将要合并、且本地有改动**的文件复制到 `.upgrade-backup/<YYYYMMDD-HHmm>/` 下（保持相对路径），
-至少覆盖：`资料/<学科>/index.md`、`笔记本/<学科>/index.md`、`学生档案.md`。
+至少覆盖：`资料/<学段>/<学科>/index.md`、`笔记本/<学科>/index.md`、`学生档案.md`。
 
 **禁止用 `git stash`** —— stash 是全局共享的，多 worktree 场景会互相破坏。
 

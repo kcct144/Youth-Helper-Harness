@@ -44,7 +44,7 @@ kilo.json                  权限 + instructions 登记
 harness.json               版本号 + 升级文件清单（upgradeable / merge_by_rule / never_touch）
 kilo.json                  权限 + instructions 登记；**默认模式 code**（不用自定义 agent，原因见 §五）
 .kilo/command/*.md         斜杠命令（**只保留 /upgrade**；教学入口一律自然语言）
-.kilo/skills/<name>/SKILL.md   tutor / study-mode / onboarding / wrongbook / recitation / notebook / study-data / upgrade
+.kilo/skills/<name>/SKILL.md   tutor / study-mode / question-type-coach / knowledge-base / onboarding / wrongbook / recitation / notebook / study-data / upgrade
 学习数据/schema/*.sql      新库建表语句；migrations/<库>/NNN_*.sql 为已有库的结构变更（开库自动执行）
 学习数据/scripts/*.mjs     db.mjs（底层）、wrong.mjs、recite.mjs、gap.mjs（缺口）、grab-image.mjs（抓图）
 复习/                       到期复习的本地网页：`开始复习.cmd`（双击）+ `server.mjs`（零依赖）+ 原生页面
@@ -78,7 +78,8 @@ kilo.json                  权限 + instructions 登记；**默认模式 code**�
 - [ ] **初中各科教材目录**（`资料/初中/<学科>/教材目录.md`）：机制已就绪，文件到手即可用；
       未建之前按 tutor §4 的降级规则处理（用学生自己的说法，不编造册别页码）。
 - [ ] **大埔县中考 / 广东高考口径**（命题方、科目、总分）：需用户确认，**不代为猜测**。
-- [x] **英语练习体系并入**：题库（一题一 md，带 id/考点/台阶/状态）+ 8 个题型工作区（考点地图、做题流程、学习路径）+ 7 个 coach 技能（原在 `.agents/skills/`，Kilo 不认，已迁到 `.kilo/skills/`）+ 体系维护技能（老师侧）
+- [x] **英语练习体系并入**：题库（一题一 md，带 id/考点/台阶/状态）+ 8 个题型工作区（考点地图、做题流程、学习路径）+ 体系维护技能（老师侧）
+- [x] **题型技能收成一个**：7 个 coach 技能合并为 `question-type-coach`，各题型的教学决策并入 `题型/<学段>/<学科>/<题型>/AGENTS.md`（技能数 17→11）。以后新增学科/题型**只加目录、不加技能**
 - [ ] **资料各级目录具体放什么内容**：目前只定了目录结构与格式（md 为主、表格类用 csv）。
       **用一段时间后再讨论**——先别预设一堆栏目，按真实需要长。
 - [ ] 上下文预算：`AGENTS.md` ≤ 70 行、常驻规则 ≤ 12 条；新增细则一律进技能，不进常驻。
@@ -90,6 +91,10 @@ kilo.json                  权限 + instructions 登记；**默认模式 code**�
 ## 六、上下文预算（维护纪律）
 
 - **常驻薄**：`AGENTS.md` + `学生档案.md` 是每次会话都要付的，只放"每轮都必须遵守"的规则。
-- **技能厚**：`tutor` 是唯一允许厚的文件（讲解是主线），其余技能"用到才读、读完够用"。
+- **技能按需**：技能只在用到时读。`tutor` 与各题型 coach 允许厚（承载判据与流程），其余保持"读完够用"。
+- **技能总数 ≤ 20**：技能清单（每个技能的 name + description，约 65~90 tokens）**每次都进上下文**。
+  新增一个技能前，先算它值不值这个常驻成本，再加上相关任务的加载成本。
 - **同一规则只写一次**：别处只留一行指针，避免两份漂移。
 - 判断一个新规则该放哪：**每轮都要遵守 → AGENTS.md；特定场景 → 技能；只是资料 → 移出常驻**。
+- 实测基线（2026-09-27）：常驻约 3.3~4.4k tokens（其中 11 个技能的清单 0.6~0.9k）；讲一道题约 9~12k；复习为 0（AI 不参与）。
+  超过这个量级时先查是不是"一次读了多份资料"——`question-type-coach` 里已写明按需读的优先级。

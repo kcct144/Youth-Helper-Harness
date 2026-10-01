@@ -24,3 +24,8 @@ agent-manager.json
 # Python 缓存（题库维护工具用）
 __pycache__/
 *.pyc
+
+# 知识库：独立仓库，clone 到 knowledge-base/ 目录。
+# 整个目录不跟踪——否则两个仓库会互相冲突；内部结构由知识库仓库自己管。
+knowledge-base/
+知识库/

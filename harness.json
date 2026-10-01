@@ -18,8 +18,7 @@
     "学习数据/schema/*.sql",
     "学习数据/schema/migrations/**",
     "学习数据/图片/README.md",
-    ".gitattributes",
-    "题型/**"
+    ".gitattributes"
   ],
   "merge_by_rule": [
     {
@@ -38,8 +37,7 @@
     "笔记本/<学科>/<专题>/**",
     ".upgrade-backup/**",
     "学习数据/待讲解.json",
-    "题型/**/学习进度.md",
-    "题型/**/学习记录.md",
+    "题型记录/**",
     "knowledge-base/**"
   ]
 }

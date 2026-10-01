@@ -48,12 +48,12 @@ git diff --name-status HEAD <remote>/main
 ```
 
 按类别归纳给学生：技能（`.kilo/skills/`）、命令（`.kilo/command/`）、脚本（`学习数据/scripts/`）、
-数据库结构（`schema/`）、资料（`资料/`）、文档。一两句说清，比如"新增了 XX 技能、修了图片抓取的 bug"。
+数据库结构（`schema/`）、文档。知识库是独立仓库，不在升级范围。一两句说清，比如"新增了 XX 技能、修了图片抓取的 bug"。
 
 ## 3. 备份（关键，先做）
 
 把**将要合并、且本地有改动**的文件复制到 `.upgrade-backup/<YYYYMMDD-HHmm>/` 下（保持相对路径），
-至少覆盖：`资料/<学段>/<学科>/index.md`、`笔记本/<学科>/index.md`、`学生档案.md`。
+至少覆盖：`笔记本/<学科>/index.md`、`学生档案.md`。
 
 **禁止用 `git stash`** —— stash 是全局共享的，多 worktree 场景会互相破坏。
 

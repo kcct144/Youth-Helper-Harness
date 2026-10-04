@@ -29,3 +29,6 @@ __pycache__/
 # 整个目录不跟踪——否则两个仓库会互相冲突；内部结构由知识库仓库自己管。
 knowledge-base/
 知识库/
+
+# DSH 等 harness 的技能目录：本地建联接，不进库（内容在 .kilo/skills）
+.agents/

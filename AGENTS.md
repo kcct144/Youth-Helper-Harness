@@ -93,10 +93,19 @@ knowledge-base/题型/<学段>/<学科>/<题型>/   题型工作区：资料/（
 两个条件都满足 → 加载 `.kilo/skills/onboarding/SKILL.md`，按其中流程走（一屏介绍 + **只问 1 个问题**）。
 学生直接问了一道题就正常讲课，不铺开场白；学生说"我知道怎么用"就跳过。**只介绍这一次。**
 
+## 技能与配置
+
+技能都在 `.kilo/skills/<name>/SKILL.md`（11 个），每个文件开头的 `description` 说明什么时候用它。
+
+- **Kilo**：直接读那个目录（原生 skill 机制会自动触发）。
+- **DSH 或其它 harness**：它们按 `.agents/` 找技能。**首次使用先双击 `装上DSH.cmd`**——
+  它把 `.agents/skills` 链到 `.kilo/skills`（Windows 目录联接），一份内容两边共用，不用维护两套。
+- `kilo.json` 是 Kilo 专用（权限、自动加载 `学生档案.md`）。**其它 harness 请手动读一次 `学生档案.md`。**
+
 ## 每次会话
 
 0. `学习数据/` 下没有 `.db` → 加载 `onboarding` 技能走引导流程。
-1. **只读 `PROJECT.md` 的「边界三栏」**；`学生档案.md` 自动加载。其余内容（脚本速查、目录、升级）用到再查。
+1. **只读 `PROJECT.md` 的「边界三栏」**；**先读 `学生档案.md`**（Kilo 靠 `kilo.json` 自动加载，其它 harness 手动读）。其余内容（脚本速查、目录、升级）用到再查。
 2. 按需加载技能：`.kilo/skills/<name>/SKILL.md`（tutor / onboarding / wrongbook / recitation / notebook / study-data / upgrade）。
 3. 数据读写先看 `study-data`，跑完**贴真实输出**；声称"已写入 / 已修改 / 已完成"前必须核对
    （脚本看输出、文件读回或跑一次 `git status`）。没核对就说"已改好"，是失信，比没做更糟。

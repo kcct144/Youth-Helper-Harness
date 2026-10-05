@@ -30,5 +30,8 @@ __pycache__/
 knowledge-base/
 知识库/
 
+# 老师原件及知识库加工记录：知识库只保存处理后的教学内容
+/原始资料/
+
 # DSH 等 harness 的技能目录：本地建联接，不进库（内容在 .kilo/skills）
 .agents/

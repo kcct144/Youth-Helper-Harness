@@ -21,6 +21,9 @@ agent-manager.json
 # 升级前的本地备份（临时产物）
 .upgrade-backup/
 
+# 临时工作区：试卷原卷、待处理的中间文件，不进版本库
+temp/
+
 # Python 缓存
 __pycache__/
 *.pyc
